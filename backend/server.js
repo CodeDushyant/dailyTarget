@@ -14,7 +14,8 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:62228',
     'https://dailytarget-112.onrender.com',
-    'https://creative-semifreddo-756606.netlify.app' // ✅ Your frontend
+    'https://creative-semifreddo-756606.netlify.app',
+    'https://daily-target-f3rf.vercel.app/' // ✅ Your frontend
 ];
 
 app.use(cors({
