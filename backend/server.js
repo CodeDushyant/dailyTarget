@@ -2,45 +2,55 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-// Ensure the model path is correct. 'activity' vs 'Activity' depends on your file system.
-// It's good practice to use 'Activity' (capital A) for model names.
-const Activity = require('./models/activity'); 
+const Activity = require('./models/activity');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
-// Middleware
-app.use(cors()); // Enable CORS for all origins
-app.use(express.json()); // Body parser for JSON requests
+// ✅ Proper CORS config
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:62228',
+    'https://dailytarget-112.onrender.com',
+    'https://creative-semifreddo-756606.netlify.app' // ✅ Your frontend
+];
 
-// Connect to MongoDB
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
+
+app.use(express.json());
+
+// ✅ MongoDB connection
 mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB connected successfully'))
+    .then(() => console.log('✅ MongoDB connected successfully'))
     .catch(err => {
-        console.error('MongoDB connection error:', err);
-        process.exit(1); // Exit process if connection fails
+        console.error('❌ MongoDB connection error:', err);
+        process.exit(1);
     });
 
-// --- ROUTES ---
-
-// NEW: Basic GET route for the root URL (to avoid "Cannot GET /" error)
-// This serves as a simple confirmation that the server is running and accessible.
+// ✅ Default root route
 app.get('/', (req, res) => {
     res.send('Welcome to the Time Tracker Backend API!');
 });
 
-
-// @route   GET /api/activities/:date
-// @desc    Get all activities for a specific date
-// @access  Public
+// ✅ Get activities by date
 app.get('/api/activities/:date', async (req, res) => {
     try {
         const { date } = req.params;
         const activity = await Activity.findOne({ date });
-
         if (!activity) {
-            return res.status(200).json({ date, timeSlots: [] }); // Return empty for new dates
+            return res.status(200).json({ date, timeSlots: [] });
         }
         res.json(activity);
     } catch (err) {
@@ -49,22 +59,18 @@ app.get('/api/activities/:date', async (req, res) => {
     }
 });
 
-// @route   POST /api/activities
-// @desc    Create or update activities for a specific date
-// @access  Public
+// ✅ Save or update activities
 app.post('/api/activities', async (req, res) => {
     try {
         const { date, timeSlots } = req.body;
-
         if (!date || !timeSlots || !Array.isArray(timeSlots)) {
             return res.status(400).json({ message: 'Invalid request body' });
         }
 
-        // Find and update, or create if not found
         const updatedActivity = await Activity.findOneAndUpdate(
             { date },
-            { $set: { timeSlots } }, // Overwrite existing timeSlots for the date
-            { new: true, upsert: true, setDefaultsOnInsert: true } // Return the updated doc, create if not exists
+            { $set: { timeSlots } },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
         );
 
         res.status(200).json(updatedActivity);
@@ -74,19 +80,15 @@ app.post('/api/activities', async (req, res) => {
     }
 });
 
-// @route   GET /api/activities/history
-// @desc    Get activity history for the last 7 days
-// @access  Public
+// ✅ Get activity history (last 7 days)
 app.get('/api/activities/history', async (req, res) => {
     try {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to start of today
+        today.setHours(0, 0, 0, 0);
 
         const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 6); // Go back 6 days to include today (7 days total)
+        sevenDaysAgo.setDate(today.getDate() - 6);
 
-        // Find activities within the last 7 days
-        // We need to query dates as strings, so we can convert them to YYYY-MM-DD
         const recentDates = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date(sevenDaysAgo);
@@ -96,10 +98,8 @@ app.get('/api/activities/history', async (req, res) => {
 
         const history = await Activity.find({
             date: { $in: recentDates }
-        }).sort({ date: 1 }); // Sort by date ascending
+        }).sort({ date: 1 });
 
-        // Format the output to ensure all 7 days are represented
-        // even if no data exists, and calculate summaries for each day
         const formattedHistory = recentDates.map(d => {
             const foundDay = history.find(item => item.date === d);
             if (foundDay) {
@@ -108,8 +108,7 @@ app.get('/api/activities/history', async (req, res) => {
                 let neutralMinutes = 0;
 
                 foundDay.timeSlots.forEach(slot => {
-                    // Only count slots where an activity has been entered
-                    if (slot.activity && slot.activity.trim() !== '') { 
+                    if (slot.activity && slot.activity.trim() !== '') {
                         if (slot.category === 'Productive') productiveMinutes += 30;
                         else if (slot.category === 'Waste') wasteMinutes += 30;
                         else if (slot.category === 'Neutral') neutralMinutes += 30;
@@ -121,8 +120,7 @@ app.get('/api/activities/history', async (req, res) => {
                     productive: productiveMinutes,
                     waste: wasteMinutes,
                     neutral: neutralMinutes,
-                    // totalSlots here would reflect only *filled* slots, adjust if needed
-                    totalSlots: (productiveMinutes + wasteMinutes + neutralMinutes) / 30, 
+                    totalSlots: (productiveMinutes + wasteMinutes + neutralMinutes) / 30,
                 };
             } else {
                 return {
@@ -143,8 +141,7 @@ app.get('/api/activities/history', async (req, res) => {
     }
 });
 
-
-// Start the server
+// ✅ Start server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
