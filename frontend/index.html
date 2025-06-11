@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pro Time Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🕒 Pro Time Tracker</h1>
+    </header>
+
+    <section class="date-selection">
+      <label for="datePicker">Select Date:</label>
+      <input id="datePicker" type="date"/>
+      <div class="date-nav">
+        <button id="prevDayBtn" class="nav-button">⬅ Previous Day</button>
+        <button id="nextDayBtn" class="nav-button">Next Day ➡</button>
+      </div>
+    </section>
+
+    <section id="timeSlotsSection" class="time-slots-section">
+      <h2>Daily Activities</h2>
+      <div id="timeSlotsContainer" class="slots-grid"></div>
+      <button id="saveBtn" class="primary-button">Save Activities</button>
+    </section>
+
+    <section class="summary-section">
+      <h2>📊 Last 7 Days Summary</h2>
+      <div id="historyContainer" class="history-grid"></div>
+      <div class="chart-container">
+        <canvas id="activityChart"></canvas>
+      </div>
+    </section>
+  </div>
+  
+
+  <script src="script.js"></script>
+</body>
+</html>
