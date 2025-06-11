@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://dailytarget-b2qy.onrender.com';
 const container = document.getElementById('timeSlotsContainer');
 const saveBtn = document.getElementById('saveBtn');
 const historyContainer = document.getElementById('historyContainer');
